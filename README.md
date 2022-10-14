@@ -29,3 +29,11 @@ Python script to take Backup of Databases, store it in DigitalOcean Spaces and r
 
 - `TG_BOT_TOKEN` - Access token of the Telegram bot
 - `TG_BOT_CHANNEL_ID` - Chat ID in which the Bot has to report the status. Should be obtained via **getUpdates** method to Telegram Bot API (https://core.telegram.org/bots/api#getupdates) after adding the Bot to a Channel or after Sending 'Hi' to the bot incase of Personal chat
+
+## Run
+
+Put this file in the root folder of the application and schedule it using **cron**
+
+**Scheduling using Cron to run at every midnight**:
+
+`0 0 * * * cd /path-ro-application && /usr/bin/python3 backup-databases.py > log 2>&1`
