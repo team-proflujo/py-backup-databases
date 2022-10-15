@@ -10,6 +10,9 @@ SYSTEM_DATABASES: Final = ['information_schema', 'mysql', 'performance_schema', 
 # no of days to mark file as toDelete
 MARK_TO_DELETE_NO_OF_DAYS: Final = 3
 
+# backup file format
+BACKUP_FILE_PREFIX: Final = 'dbBackup-'
+
 # telegram bot config
 TG_BOT_TOKEN = ''
 TG_BOT_CHANNEL_ID = ''
@@ -230,13 +233,13 @@ def __getDatabasesListFromMySQL(dbConfig, backupAllDatabases = False, includeSys
 
 # __executeMySQLDumpCmd
 def __executeMySQLDumpCmd(dbConfig, databasesToBackup):
-    global logger
+    global logger, BACKUP_FILE_PREFIX
 
     logger.info('Running mysqldump command')
 
     today = datetime.now().strftime('%Y%m%d_%H%M%S')
-    zipFileName = f'dbBackup-{today}.zip'
-    mysqlDumpFileName = f'dbBackup-{today}.sql'
+    zipFileName = f'{BACKUP_FILE_PREFIX}{today}.zip'
+    mysqlDumpFileName = f'{BACKUP_FILE_PREFIX}{today}.sql'
     mysqlDumpCmd = 'mysqldump -u ' + dbConfig['user'] + ' -p' + dbConfig['password']
 
     if databasesToBackup:
@@ -287,7 +290,7 @@ def __compressBackupFile(mysqlDumpFileName, zipFileName):
 
 # __uploadBackupFileToDOSpace
 def __uploadBackupFileToDOSpace(doSpacesConfig, zipFileName):
-    global logger, MARK_TO_DELETE_NO_OF_DAYS
+    global logger, MARK_TO_DELETE_NO_OF_DAYS, BACKUP_FILE_PREFIX
 
     s3Client = None
     logger.info('Establishing connection to DO Spaces')
@@ -314,8 +317,9 @@ def __uploadBackupFileToDOSpace(doSpacesConfig, zipFileName):
         toDeleteFolderPath = rootFolderPath + 'toDelete/'
 
         for fileObj in filesList['Contents']:
-            if fileObj['LastModified'] and type(fileObj['LastModified']) is datetime:
-                filePath = fileObj['Key']
+            filePath = fileObj['Key']
+
+            if filePath.startswith(rootFolderPath + BACKUP_FILE_PREFIX) and filePath.endswith('.zip') and fileObj['LastModified'] and type(fileObj['LastModified']) is datetime:
                 fileName = os.path.basename(filePath)
 
                 # remove files marked toDelete
